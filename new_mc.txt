@@ -1,0 +1,589 @@
+//Program mc
+#include <crc.h> // contine functiile necesare calcului crc-ului
+//################################################################################
+//declaratii::
+
+
+double long time;
+double x,dx,y;
+double mx[5], mdx[5],W[10][10],TIP_F_X[10][5],TIP_F_dX[10][5],TIP_F_Y[10][5],Fy[10],Cy[10];
+char BRF_E[10][10][20], mult_f_e_Y[10][20];
+int NR_P,sensorValue=0,NR_F_X,NR_F_dX,NR_F_Y,i;
+char inByteBuffer[1024] ;         // incoming serial byte
+short int Optiune;
+char intc[2],doubc[4],stringc[20];
+char dtemp[4];
+char itemp[2];
+void *temp;
+//declaratii::
+//################################################################################
+
+
+//###############################################################################
+void establishContact(short int RW)
+{
+  short int retry=0;
+  if (RW==1)
+
+    while (Serial.available() <= 0) 
+    {
+      Serial.print('A');   // send a capital A
+      delay(300);
+      retry++;
+      // if (retry==500)
+      //  break;
+    }
+  else
+    if (RW==2)
+
+      while (Serial.available() <= 0) 
+      {
+        Serial.print('B');   // send a capital A
+        delay(300);
+        retry++;
+        // if (retry==500)
+        //   break;
+      }
+
+}
+
+int retintfrst(char Buffer[],int indexB)
+{
+  if (indexB>=sizeof(Buffer))
+    return 0;
+   else
+   {
+  itemp[0]=Buffer[indexB];
+  itemp[1]=Buffer[indexB+1];
+  return (int(itemp));
+   }
+}
+
+double retfloatfrst(char Buffer[],int indexB)
+{
+  if (indexB>=sizeof(Buffer))
+    return 0;
+   else
+   {
+  dtemp[0]=Buffer[indexB];
+  dtemp[1]=Buffer[indexB+1];
+  dtemp[2]=Buffer[indexB+2];
+  dtemp[3]=Buffer[indexB+3];
+  return (atof(dtemp));
+   }
+}
+
+
+
+
+void printDouble( double val, byte precision){
+  // prints val with number of decimal places determine by precision
+  // precision is a number from 0 to 6 indicating the desired decimial places
+  // example: printDouble( 3.1415, 2); // prints 3.14 (two decimal places)
+
+  Serial.print (int(val));  //prints the int part
+  if( precision > 0) {
+    Serial.print("."); // print the decimal point
+    unsigned long frac;
+    unsigned long mult = 1;
+    byte padding = precision -1;
+    while(precision--)
+      mult *=10;
+
+    if(val >= 0)
+      frac = (val - int(val)) * mult;
+    else
+      frac = (int(val)- val ) * mult;
+    unsigned long frac1 = frac;
+    while( frac1 /= 10 )
+      padding--;
+    while(  padding--)
+      Serial.print("0");
+    Serial.print(frac,DEC) ;
+  }
+}
+
+
+
+
+
+
+
+//declarare si implementare functii pt fuzzy:::
+double satl(double u, double a, double b)
+{
+  if (u<a)
+    return 1;
+  if ( u>=a && u<=b)
+    return (b-u)/(b-a);
+  if (u>b)
+    return 0;
+}
+
+double pi(double u, double a1, double c1, double d1, double b1)
+{
+  if (u<a1)
+    return 0;
+  if ( u>=a1 && u<=c1)
+    return (u-a1)/(c1-a1);
+  if (u>c1 && u<=d1)
+    return 1;
+  if (u>d1 && u<=b1)
+    return (b1-u)/(b1-d1);
+  if(u>b1)
+    return 0;
+}
+
+double gama (double u, double a, double b)
+{
+  if (u<a)
+    return 0;
+  if ( u>=a && u<=b)
+    return (u-a)/(b-a);
+  if (u>b)
+    return 1;
+}
+
+double delta (double u, double a3, double c3, double b3)
+{
+  if (u<a3)
+    return 0;
+  if ( u>=a3 && u<=c3)
+    return (u-a3)/(c3-a3);
+  if (u>c3 && u<=b3)
+    return (b3-u)/(b3-c3);
+  if(u>b3)
+    return 0;
+}
+
+double gauss(double u, double c, double s)
+{
+  return (exp ((-(u-c)*(u-c))/(2*(s*s))));
+}
+
+double sshape(double u,double a, double b)
+{
+  if (u<=a)
+    return(0);
+  else
+    if (u<=((a+b)/2))
+      return (2*(((u-a)/(b-a))*((u-a)/(b-a))));
+    else
+      if ((u>=((a+b)/2))&(u<=b))
+        return (1-(2*(((u-b)/(b-a))*((u-b)/(b-a)))));
+      else
+        if (u>=b)
+          return(1);
+}
+
+double zshape(double u,double a, double b)
+{
+  if (u<=a)
+    return(1);
+  else
+    if ((u<=((a+b)/2))&(u>=a))
+      return (1-(2*(((u-a)/(b-a))*((u-a)/(b-a)))));
+    else
+      if ((u>=((a+b)/2))&(u<=b))
+        return (2*(((u-b)/(b-a))*((u-b)/(b-a))));
+      else
+        if (u>=b)
+          return(0);
+}
+
+double sigmoidala(double u, double a, double b)
+{
+  return(1/(1+exp(-a*(u-b))));
+}
+
+double sigmoidala2(double u,double a1, double b1,double a2, double b2)
+{
+  return(1/((1+exp(-a1*(u-b1)))*(1+exp(-a2*(u-b2)))));	
+}
+//Generalized bell-shaped built-in membership function
+
+double gbell(double u, double a,double b, double c)
+{
+  return (1/(1+((u-c)/a)*(pow(abs(((u-c)/a)),(2*b)))));
+}
+
+
+
+double maxim (double a, double b)
+{
+  if (a>b)
+    return a;
+  else
+    if (a=b)
+      return a;
+    else
+      return b;
+}
+
+double minim (double a, double b)
+{
+  if (a<b)
+    return a;
+  else
+    if (a=b)
+      return a;
+    else
+      return b;
+}
+
+void fuzz(double u,double m[], int NR_F, double TIP_F[10][5])
+{
+  for (int i=0; i<NR_F;i++)
+  {
+    if (TIP_F[i][1]==1)
+      m[i]= satl(u,TIP_F[i][1],TIP_F[i][2]);
+    else
+      if (TIP_F[i][1]==2)
+        m[i]= gama(u,TIP_F[i][1],TIP_F[i][2]);
+      else
+        if (TIP_F[i][1]==3)
+          m[i]= delta(u,TIP_F[i][1],TIP_F[i][2],TIP_F[i][3]);
+        else
+          if (TIP_F[i][1]==4)
+            m[i]= pi(u,TIP_F[i][1],TIP_F[i][2],TIP_F[i][3],TIP_F[i][4]);
+          else
+            if (TIP_F[i][1]==5)
+              m[i]= gauss(u,TIP_F[i][1],TIP_F[i][2]);
+            else
+              if (TIP_F[i][1]==6)
+                m[i]= sshape(u,TIP_F[i][1],TIP_F[i][2]);
+              else
+                if (TIP_F[i][1]==7)
+                  m[i]= zshape(u,TIP_F[i][1],TIP_F[i][2]);
+
+
+  }
+
+}
+
+
+void inferenta(double Optiune, int NR_F_X,int NR_F_dX,double W[10][10],double mx[],double mdx[])
+{
+
+  for (unsigned short i=0; i<NR_F_X; i++)
+    for (unsigned short j=0; j<NR_F_dX; j++)
+    {
+      if (Optiune==1)
+        W[i][j]=min(mx[i],mdx[j]);
+
+    }
+}
+
+void calc_ponderi(double Optiune,int NR_F_X,int NR_F_dX, int NR_F_Y, double W[10][10],char BRF_E[10][10][20],char mult_f_e_Y[10][20],double Fy[10])
+{
+  if (Optiune==1)
+  {
+    double max=0;
+
+    for(unsigned short k=0;k<NR_F_Y;k++)
+    {          
+      for (unsigned short i=0; i<NR_F_X; i++)
+        for (unsigned short j=0; j<NR_F_dX; j++)
+          if (mult_f_e_Y[k]==BRF_E[i][j])
+            if (max<W[i][j])
+              max=W[i][j];
+      Fy[k]=max;
+      max=0;
+    }
+  }
+}
+
+double defuzificare(double Optiune,int NR_P, int NR_F_Y, int Fy[10],double TIP_F[10][5])
+{
+  if (Optiune==1)
+  {
+    double minim=1025, maxim=-1025, Cy[10], d,suma_c=0,suma_f=0, h=0,pas=0;
+    for(short int i=0; i<NR_F_Y;i++)
+    {
+      if(Fy[i]!=0)
+      {
+        h=0;
+        pas=0;
+        if (TIP_F[i][1]==1)
+        {
+          h=(255-0)/NR_P;
+          while (pas<=255)
+          {
+            d= satl(pas,TIP_F[i][1],TIP_F[i][2]);
+            if (d==Fy[i])
+            {
+              if (pas<minim)
+                minim=d;
+              if (pas>maxim)
+                maxim=d;
+            }
+            pas=pas+h;
+
+
+          }
+          Cy[i]=(minim+maxim)/2;
+        }
+        else
+          if (TIP_F[i][1]==2)
+          {
+            h=(255-0)/NR_P;
+            while (pas<=255)
+            {
+              d= gama(pas,TIP_F[i][1],TIP_F[i][2]);
+              if (d==Fy[i]) 
+              {
+                if (pas<minim)
+                  minim=d;
+                if (pas>maxim)
+                  maxim=d;
+              }
+              pas=pas+h;
+
+
+            }
+            Cy[i]=(minim+maxim)/2;
+          }
+          else
+            if (TIP_F[i][1]==3)
+            {
+              h=(255-0)/NR_P;
+              while (pas<=255)
+              {
+                d= delta(pas,TIP_F[i][1],TIP_F[i][2],TIP_F[i][3]);
+                if (d==Fy[i]) 
+                {
+                  if (pas<minim)
+                    minim=d;
+                  if (pas>maxim)
+                    maxim=d;
+                }
+                pas=pas+h;
+
+
+              }
+              Cy[i]=(minim+maxim)/2;
+            }
+            else
+              if (TIP_F[i][1]==4)
+              {
+                h=(255-0)/NR_P;
+                while (pas<=255)
+                {
+                  d= pi(pas,TIP_F[i][1],TIP_F[i][2],TIP_F[i][3],TIP_F[i][4]);
+                  if (d==Fy[i]) 
+                  {
+                    if (pas<minim)
+                      minim=d;
+                    if (pas>maxim)
+                      maxim=d;
+                  }
+                  pas=pas+h;
+
+
+                }
+                Cy[i]=(minim+maxim)/2;
+              }
+              else
+                if (TIP_F[i][1]==5)
+                {
+                  h=(255-0)/NR_P;
+                  while (pas<=255)
+                  {
+                    d= gauss(pas,TIP_F[i][1],TIP_F[i][2]);
+                    if (d==Fy[i]) 
+                    {
+                      if (pas<minim)
+                        minim=d;
+                      if (pas>maxim)
+                        maxim=d;
+                    }
+                    pas=pas+h;
+
+
+                  }
+                  Cy[i]=(minim+maxim)/2;
+                }
+                else
+                  if (TIP_F[i][1]==6)
+                  {
+                    h=(255-0)/NR_P;
+                    while (pas<=255)
+                    {
+                      d= sshape(pas,TIP_F[i][1],TIP_F[i][2]);
+                      if (d==Fy[i]) 
+                      {
+                        if (pas<minim)
+                          minim=d;
+                        if (pas>maxim)
+                          maxim=d;
+                      }
+                      pas=pas+h;
+
+
+                    }
+                    Cy[i]=(minim+maxim)/2;
+                  }
+                  else
+                    if (TIP_F[i][1]==7)
+                    {
+                      h=(255-0)/NR_P;
+                      while (pas<=255)
+                      {
+                        d= zshape(pas,TIP_F[i][1],TIP_F[i][2]);
+                        if (d==Fy[i]) 
+                        {
+                          if (pas<minim)
+                            minim=d;
+                          if (pas>maxim)
+                            maxim=d;
+                        }
+                        pas=pas+h;
+
+
+                      }
+                      Cy[i]=(minim+maxim)/2;
+                    }
+        for(short int j=0;j<NR_F_Y;j++)
+        {
+          if(Fy[i]!=0)
+          {
+            suma_c+=Fy[i]*Cy[i];
+            suma_f+=Fy[i];
+          }
+        }
+        return (suma_c/suma_f);  
+      }
+    }
+  }
+  //return Y;
+}
+
+//declarare si implementare functii pt fuzzy:::
+//###############################################################################
+
+
+
+
+
+
+//################################################################################
+// Connections:
+//int PWM_OUT=3;
+//################################################################################
+
+
+
+
+void setup()
+{
+  //##################################################################################  
+  dx=0;
+  //initializare variabile  
+  //##################################################################################  
+
+  //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  //initializare pini
+
+  //$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  crcInit();
+  Serial.begin(9600);
+
+
+}
+
+void loop()
+{
+  establishContact(1);  // send a byte to establish contact until receiver responds
+  i=0;
+  while (Serial.available() > 0)
+  {
+    inByteBuffer[i++]=Serial.read();  
+  }
+  for (int j=0;j<=sizeof(inByteBuffer);j++)
+    Serial.print(inByteBuffer[j]);
+    
+  //int retintfrst(char Buffer[],int indexB)
+  //double retfloatfrst(char Buffer[],int indexB)
+  Serial.println();
+  NR_F_X=retintfrst(inByteBuffer,0);
+  Serial.print("nr x este: ");
+   Serial.println(NR_F_X);
+  
+  
+  
+  NR_F_dX=retintfrst(inByteBuffer,2);
+  Serial.print("nr dx este: ");
+   Serial.println(NR_F_dX);
+  
+  
+  NR_F_Y=retintfrst(inByteBuffer,4);
+  Serial.print("nr y este: ");
+   Serial.println(NR_F_Y);
+  
+  for(short int m=0;m<10;m++)
+  {
+    for(short int n=0;n<5;n++)
+    {
+      TIP_F_X[m][n]=retfloatfrst(inByteBuffer,(6+(20*m)+(4*n)));
+      //TIP_F_dX[m][n]=retfloatfrst(inByteBuffer,(406+(20*m)+(4*n))); // daca o pun moare
+      Serial.print("TIP_F_X ");
+       Serial.print(TIP_F_X[m][n]);
+    }
+    Serial.println();
+  }
+
+  
+/*  
+  for(short int m=0;m<10;m++)
+  {
+    for(short int n=0;n<5;n++)
+    {
+      TIP_F_Y[m][n]=retfloatfrst(inByteBuffer,(806+(20*m)+(4*n)));
+      Serial.print("TIP_F_Y ");
+       Serial.print(TIP_F_Y[m][n]);
+    }
+    Serial.println();
+  }
+*/
+  while(1)
+  {
+    //establishContact(1);  // send a byte to establish contact until receiver responds
+    //sensorValue = 653-analogRead(A0);
+    //x=sensorValue;
+    //fuzz(x,mx,NR_F_X,TIP_F_X); 
+    //fuzz(dx,mdx,NR_F_dX,TIP_F_dX);
+    //calc_ponderi(Optiune,NR_F_X,NR_F_dX,NR_F_Y,W,BRF_E,mult_f_e_Y,Fy);
+    //inferenta(Optiune,NR_F_X,NR_F_dX,W,mx,mdx);
+    //y=defuzificare(Optiune,NR_P,NR_F_Y,Fy,TIP_F_Y);
+    time = micros();
+    //delay(100);
+    //Serial.println(x);
+    //Serial.println(dx);
+    //printDouble(time,0);
+    //Serial.println(y);
+    // analogWrite(3, y);
+    // if (Serial.available() > 0) {
+    // get incoming byte:
+    //   inByte = Serial.read();
+    //  if (inByte=='B') // sper ca e corect
+    //   break;
+    //}
+    // dx=y; 
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
