@@ -1,0 +1,107 @@
+[Workspace Header]
+Version = 850
+Pathname = "/c/Users/Public/Documents/National Instruments/CVI85/samples/rs232/serial.cws"
+CVI Dir = "/c/program files (x86)/national instruments/cvi85"
+CVI Shared Dir = "/C/Program Files (x86)/National Instruments/Shared/CVI"
+CVI Pub Local Dir = "/C/ProgramData/National Instruments/CVI85"
+CVI Pub Global Dir = "/C/ProgramData/National Instruments/CVI"
+IVI Standard Root Dir = "/C/Program Files (x86)/IVI"
+VXIplug&play Framework Dir = "/c/vxipnp/winnt"
+Number of Projects = 1
+Active Project = 1
+Project 0001 = "serial.prj"
+Drag Bar Left = 202
+Window Top = 62
+Window Left = 201
+Window Bottom = 564
+Window Right = 991
+Maximized = True
+Maximized Children = True
+Max Number Of Errors = 20
+Track Include File Dependencies = True
+Prompt For Missing Includes = True
+Stop On First Error File = False
+Bring Up Err Win For Warnings = True
+Show Build Dialog = False
+Save Changes Before Running = "Always"
+Hide Windows = False
+Global Hot Key = False
+Break At First Statement = False
+Sort Type = "File Name"
+Number of Opened Files = 2
+Window Confinement Region Enabled = True
+MainColumnWidth = 183
+FileDateColumnWidth = 70
+FileSizeColumnWidth = 70
+StatusColumnWidth = 70
+
+[Project Header 0001]
+Version = 850
+Don't Update DistKit = False
+Platform Code = 4
+Build Configuration = "Debug"
+Warn User If Debugging Release = 1
+Batch Build Release = False
+Batch Build Debug = False
+Force Rebuild = False
+
+[File 0001]
+Path = "/c/Users/Public/Documents/National Instruments/CVI85/samples/rs232/serial.c"
+File Type = "CSource"
+Disk Date = 3275971200
+In Projects = "1,"
+Window Top = 62
+Window Left = 26
+Window Z-Order = 1
+Source Window State = "1,28,639,28,0,72,0,0,0,136,0,28,0,0,0,35,225,0,240,98,258,559,1,21,"
+
+[File 0002]
+Path = "/c/Users/Public/Documents/National Instruments/CVI85/samples/rs232/serial.uir"
+File Type = "User Interface Resource"
+Disk Date = 3384148487
+In Projects = "1,"
+Window Top = 32
+Window Left = 10
+Window Height = 271
+Window Width = 559
+Window Z-Order = 2
+
+[File 0003]
+Path = "/c/Users/Public/Documents/National Instruments/CVI85/samples/rs232/serial.h"
+File Type = "Include"
+Disk Date = 3384148487
+In Projects = "1,"
+Source Window State = "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,"
+
+[Build Options 0001]
+Generate Browse Info = True
+Enable Uninitialized Locals Runtime Warning = True
+Execution Trace = "Disabled"
+Debugging Level = "Standard"
+Break On Library Errors = True
+Break On First Chance Exceptions = False
+Execution Target Address = "Local desktop computer"
+Execution Target Port = 0
+Execution Target Type = 0
+
+[SCC Options 0001]
+Use global settings = True
+SCC Provider = ""
+SCC Project = ""
+Local Path = ""
+Auxiliary Path = ""
+Perform Same Action For .h File As For .uir File = "Ask"
+Perform Same Action For .cds File As For .prj File = "Ask"
+Username = ""
+Comment = ""
+Use Default Username = False
+Use Default Comment = False
+Suppress CVI Error Messages = False
+Always show confirmation dialog = True
+
+[DLL Debugging Support 0001]
+External Process Path = ""
+
+[Command Line Args 0001]
+Command Line Args = ""
+
